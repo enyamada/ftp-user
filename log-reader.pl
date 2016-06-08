@@ -5,6 +5,9 @@ use strict;
 use Data::Dumper;
 use File::Basename qw(basename);
 use Log::Log4perl qw(:easy);
+use File::Basename;
+use File::Copy qw(copy);
+
 Log::Log4perl->easy_init($WARN);
 
 my $program = basename($0);
@@ -97,6 +100,24 @@ sub create_log_dir {
    chown $uid, $gid, $dir_name || ERROR "Couldnt chown $uid $gid $dir_name" ; 
 }
 
+sub lock_and_backup {
+ 
+   my ($full_file_name) = @_;
+  
+   # lock file by setting root as owner with 444
+   chown 0, 0, $full_file_name || ERROR "Couldnt lock $full_file_name\n";
+   chmod 0444, $full_file_name || ERROR "Couldnt chmod 444 $full_file_name\n";
+
+
+   # copy the file to the Backup sub-folder
+   my $dir_name = dirname($full_file_name) . "/Backup/";
+   my $file_name = basename($full_file_name);
+   copy $full_file_name, $dir_name . "$file_name" || ERROR "Couldnt copy $full_file_name to  $dir_name/$file_name";
+   
+
+}
+
+   
         
 my %user_data;
 
@@ -118,6 +139,14 @@ while () {
       # just skip if user is proftpd 
       next if ($user eq "proftpd");
 
+      # If a new file has been stored under NOTFIS directory, then lock it (to prevent
+      # it from being overwritten) and do a backup
+      if ($cmd =~ /^STOR/  &&  $file_name =~ /\/NOTFIS\//) {
+         lock_and_backup ($file_name);
+# ??? user wont be able to delete the file
+      } 
+        
+         
       print "File=$file_name\n";
 
       # update the corresponding user ftp log
