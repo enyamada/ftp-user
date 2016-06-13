@@ -1,12 +1,11 @@
 #!/usr/bin/perl
-
-
 use strict;
 use Data::Dumper;
 use File::Basename qw(basename);
 use Log::Log4perl qw(:easy);
 use File::Basename;
 use File::Copy qw(copy);
+use POSIX qw(strftime);
 
 Log::Log4perl->easy_init($WARN);
 
@@ -48,7 +47,7 @@ sub parse_ftp_log_data {
    my ($ip, $user, $date, $tz, $dummy, $cmd, $file, $rc, $n_bytes);
    my @rest;
 
-   print "linha = $_";
+   #print "linha = $_";
    ($ip, $user, $date, $tz) = split;
    ($dummy, $cmd, @rest) = split /"/;
    ($dummy, $file, $rc, $n_bytes) = split / /, $rest[0];
@@ -74,12 +73,21 @@ sub update_user_ftp_log {
    # Determine the log file name to be updated (that depends on the user)
    my $u = $user_data->{$user};
    my $log_dir_name  = $u->{'homedir'} . "/log/";
+   my $notfis_dir_name =  $u->{'homedir'} . "/NOTFIS"; 
+   my $backup_dir_name =  $u->{'homedir'} . "/NOTFIS/Backup"; 
    my $log_file_name = $log_dir_name . "log_${user}_data.log";
    $log_file_name =~ tr/-/_/;
 
    # Create log dir if it doesnt exist
-   create_log_dir($log_dir_name, $u->{'uid'}, $u->{'gid'}) if (! -d $log_dir_name);
-
+   if (! -d $log_dir_name) {
+      create_log_dir($log_dir_name, $u->{'uid'}, $u->{'gid'});
+   }
+   if (! -d $backup_dir_name) { 
+      create_log_dir($notfis_dir_name, $u->{'uid'}, $u->{'gid'});
+      chown 0755, $notfis_dir_name;
+      create_log_dir($backup_dir_name,  $u->{'uid'}, $u->{'gid'});
+   } 
+     
    chomp($entry);
    print "sub: writing $entry to $log_file_name\n";
    open ($log, ">> $log_file_name") || ERROR "Couldnt open $log_file_name\n";
@@ -100,19 +108,28 @@ sub create_log_dir {
    chown $uid, $gid, $dir_name || ERROR "Couldnt chown $uid $gid $dir_name" ; 
 }
 
+
+
 sub lock_and_backup {
  
-   my ($full_file_name) = @_;
+   my ($user, $user_data, $full_file_name) = @_;
   
    # lock file by setting root as owner with 444
-   chown 0, 0, $full_file_name || ERROR "Couldnt lock $full_file_name\n";
-   chmod 0444, $full_file_name || ERROR "Couldnt chmod 444 $full_file_name\n";
+#   chown 0, 0, $full_file_name || ERROR "Couldnt lock $full_file_name\n";
+#   chmod 0444, $full_file_name || ERROR "Couldnt chmod 444 $full_file_name\n";
 
 
    # copy the file to the Backup sub-folder
    my $dir_name = dirname($full_file_name) . "/Backup/";
    my $file_name = basename($full_file_name);
-   copy $full_file_name, $dir_name . "$file_name" || ERROR "Couldnt copy $full_file_name to  $dir_name/$file_name";
+
+   # File already exists in the Backup? Append a suffix to the copy to not overwrite the previous version
+   my $copy_file_name = $dir_name . "$file_name";
+   if (-e $copy_file_name) {
+      $copy_file_name = $copy_file_name . "." . strftime '%Y-%m-%d-%H-%M-%S', gmtime();
+   }
+
+   copy $full_file_name, $copy_file_name || ERROR "Couldnt copy $full_file_name to  $dir_name/$file_name";
    
 
 }
@@ -134,26 +151,28 @@ while () {
    open(my $fifo, "< $fifo") or die "$program: unable to open $fifo: $!\n";
    while (<$fifo>) {
       ($user, $cmd, $file_name, $rc, $n_bytes) = parse_ftp_log_data($_);
-      print ("u=$user, cmd=$cmd, rc=$rc, n_bytes=$n_bytes\n");
+      #print ("u=$user, cmd=$cmd, rc=$rc, n_bytes=$n_bytes\n");
       
       # just skip if user is proftpd 
       next if ($user eq "proftpd");
+      
+      # update the corresponding user ftp log
+      update_user_ftp_log ($user, \%user_data, $_);
 
-      # If a new file has been stored under NOTFIS directory, then lock it (to prevent
-      # it from being overwritten) and do a backup
+      # If a new file has been stored under NOTFIS directory, then 
+      # do a backup
       if ($cmd =~ /^STOR/  &&  $file_name =~ /\/NOTFIS\//) {
-         lock_and_backup ($file_name);
+         lock_and_backup ($user, \%user_data, $file_name);
 # ??? user wont be able to delete the file
       } 
         
          
-      print "File=$file_name\n";
+      #print "File=$file_name\n";
 
-      # update the corresponding user ftp log
-      update_user_ftp_log ($user, \%user_data, $_);
 
    }
    close(FIFO);
 } 
 
 exit 0;
+
