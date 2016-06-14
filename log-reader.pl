@@ -72,9 +72,9 @@ sub update_user_ftp_log {
 
    # Determine the log file name to be updated (that depends on the user)
    my $u = $user_data->{$user};
-   my $log_dir_name  = $u->{'homedir'} . "/log/";
+   my $log_dir_name  = $u->{'homedir'} . "/LOG/";
    my $notfis_dir_name =  $u->{'homedir'} . "/NOTFIS"; 
-   my $backup_dir_name =  $u->{'homedir'} . "/NOTFIS/Backup"; 
+   my $backup_dir_name =  $u->{'homedir'} . "/NOTFIS/BACKUP"; 
    my $log_file_name = $log_dir_name . "log_${user}_data.log";
    $log_file_name =~ tr/-/_/;
 
@@ -119,11 +119,11 @@ sub lock_and_backup {
 #   chmod 0444, $full_file_name || ERROR "Couldnt chmod 444 $full_file_name\n";
 
 
-   # copy the file to the Backup sub-folder
-   my $dir_name = dirname($full_file_name) . "/Backup/";
+   # copy the file to the BACKUP sub-folder
+   my $dir_name = dirname($full_file_name) . "/BACKUP/";
    my $file_name = basename($full_file_name);
 
-   # File already exists in the Backup? Append a suffix to the copy to not overwrite the previous version
+   # File already exists in the BACKUP? Append a suffix to the copy to not overwrite the previous version
    my $copy_file_name = $dir_name . "$file_name";
    if (-e $copy_file_name) {
       $copy_file_name = $copy_file_name . "." . strftime '%Y-%m-%d-%H-%M-%S', gmtime();
@@ -175,4 +175,3 @@ while () {
 } 
 
 exit 0;
-
