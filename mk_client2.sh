@@ -5,7 +5,7 @@ function create_extra_dirs {
    BASE_DIR=$1
    MY_UID=$2
 
-   LIST_SUBDIRS='OCOREN CTE log NOTFIS'
+   LIST_SUBDIRS='OCOREN CTE LOG NOTFIS'
   
    for sd in $LIST_SUBDIRS; do
       mkdir $BASE_DIR/$sd
@@ -13,12 +13,12 @@ function create_extra_dirs {
    done
  
    # Log directory should be read-only
-   chmod a-w $BASE_DIR/log
+   chmod a-w $BASE_DIR/LOG
  
-   # Create NOTFIS/Backup, read-only too
-   mkdir $BASE_DIR/NOTFIS/Backup
-   chown $MY_UID:$MY_UID $BASE_DIR/NOTFIS/Backup
-   chmod a-w $BASE_DIR/NOTFIS/Backup
+   # Create NOTFIS/BACKUP, read-only too
+   mkdir $BASE_DIR/NOTFIS/BACKUP
+   chown $MY_UID:$MY_UID $BASE_DIR/NOTFIS/BACKUP
+   chmod a-w $BASE_DIR/NOTFIS/BACKUP
    
    
 }
@@ -87,7 +87,7 @@ then
         chmod a+rw $FTP_ROOT/$NEW_HOME
 
         # Create the new user using ftpasswd
-        output=`echo $NEW_PASS | ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name $NEW_USER --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$`
+        output=`echo $NEW_PASS | /usr/sbin/ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name $NEW_USER --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$`
         output_err=$?
         echo $output
 
@@ -96,7 +96,7 @@ then
         then
                 # Say the user and password created
                 echo you can change later password with e.g.:
-                echo "echo $NEW_PASS | ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin --change-password --name $NEW_USER"
+                echo "echo $NEW_PASS | /usr/sbin/ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin --change-password --name $NEW_USER"
                 echo
                 echo User: "$NEW_USER"
                 echo Password: "$NEW_PASS"
@@ -122,7 +122,7 @@ then
  
                         # Create new user-provider login using ftpasswd and 
                         # display data
-                        echo $NEW_PASS | ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name ` echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'` --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME/$PROVIDER --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$ -e "using alternate file" -e entry
+                        echo $NEW_PASS | /usr/sbin/ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name ` echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'` --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME/$PROVIDER --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$ -e "using alternate file" -e entry
                         echo User: `echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'`
                         echo Password: "$NEW_PASS"
                         echo
@@ -156,7 +156,7 @@ test -z "$NEW_HOME" && NEW_HOME=$NEW_USER
                         # Create extra dirs as asked by SR
                         create_extra_dirs  $FTP_ROOT/$NEW_HOME/$PROVIDER $NEW_UID
 
-                        echo $NEW_PASS | ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name ` echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'` --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME/$PROVIDER --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$ -e "using alternate file" -e entry
+                        echo $NEW_PASS | /usr/sbin/ftpasswd --file=/etc/proftpd/ftpd.passwd --passwd --stdin  --name ` echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'` --uid $NEW_UID --gid $NEW_UID --home $FTP_ROOT/$NEW_HOME/$PROVIDER --shell /bin/false 2| grep -v -e false -e PAM -e adjusted -e ^$ -e "using alternate file" -e entry
                         echo User: `echo "$NEW_USER-$PROVIDER" | tr '[:upper:]' '[:lower:]'`
                         echo Password: "$NEW_PASS"
                         echo
@@ -177,6 +177,3 @@ else
                fi
        fi
 fi
-
-
-
