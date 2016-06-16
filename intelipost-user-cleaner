@@ -1,0 +1,7 @@
+#!/bin/bash
+
+IP_LOG="/home/ftp/LOG/log_intelipost_data.log"
+SUFFIX=`date +%Y%m%d%H%M`
+mv $IP_LOG /home/ftp/LOG/LOGS_BACKUP/log_intelipost_data.log.$SUFFIX
+gzip /home/ftp/LOG/LOGS_BACKUP/log_intelipost_data.log.$SUFFIX
+

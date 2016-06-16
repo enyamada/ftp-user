@@ -1,0 +1,11 @@
+#!/bin/bash
+
+FILE_LIST=`find /home/ftp -name log_\*_data.log`
+SUFFIX=`date +%Y%m%d%H%M%S`
+for f in $FILE_LIST; do
+   if [ $f != "/home/ftp/LOG/log_intelipost_data.log" ]; then
+	   mv $f $f.$SUFFIX
+	   gzip $f.$SUFFIX 
+   fi
+done 
+
