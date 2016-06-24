@@ -10,6 +10,7 @@ function create_extra_dirs {
    for sd in $LIST_SUBDIRS; do
       mkdir $BASE_DIR/$sd
       chown $MY_UID:$MY_UID $BASE_DIR/$sd
+      chmod a+rw $BASE_DIR/$sd
    done
  
    # Log directory should be read-only

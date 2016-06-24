@@ -82,10 +82,15 @@ sub update_user_ftp_log {
    if (! -d $log_dir_name) {
       create_log_dir($log_dir_name, $u->{'uid'}, $u->{'gid'});
    }
-   if (! -d $backup_dir_name) { 
+
+   # Cretae NOTFIS/BACKUP dir (unless user==intelipost) 
+   if (! -d $backup_dir_name and $user ne 'intelipost') { 
       create_log_dir($notfis_dir_name, $u->{'uid'}, $u->{'gid'});
-      chown 0755, $notfis_dir_name;
+      chmod 0777, $notfis_dir_name;
+      print "$notfis_dir_name chmoded to 777\n";
       create_log_dir($backup_dir_name,  $u->{'uid'}, $u->{'gid'});
+      chmod 0555, $backup_dir_name;
+      print "$backup_dir_name chmoded to 555\n";
    } 
      
    chomp($entry);
@@ -106,6 +111,7 @@ sub create_log_dir {
 
    mkdir ($dir_name, 0555) || ERROR "Couldnt create $dir_name";
    chown $uid, $gid, $dir_name || ERROR "Couldnt chown $uid $gid $dir_name" ; 
+   print "Criei $dir_name\n";
 }
 
 
@@ -175,3 +181,4 @@ while () {
 } 
 
 exit 0;
+
